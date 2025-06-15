@@ -1,5 +1,8 @@
+// pages/index.js
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { db } from '../lib/firebaseConfig'; // Adjust the path if needed
+import { collection, addDoc } from 'firebase/firestore';
 
 export default function SignUp() {
   const [username, setUsername] = useState('');
@@ -7,16 +10,32 @@ export default function SignUp() {
   const [age, setAge] = useState('');
   const router = useRouter();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!username || !password || !age) return;
     if (parseInt(age) > 120) {
-      alert("Please enter a valid age (below 120). ");
+      alert("❌ Please enter a valid age below 120.");
       return;
     }
+
     const user = { username, password, age };
     localStorage.setItem('userInfo', JSON.stringify(user));
-    router.push('/score');
+
+    // ✅ Save to Firestore
+    try {
+      await addDoc(collection(db, 'users'), {
+        username,
+        age: parseInt(age),
+        createdAt: new Date(),
+      });
+      console.log("✅ User added to Firestore");
+    } catch (error) {
+      console.error("❌ Error adding user to Firestore:", error);
+    }
+
+    // ✅ Navigate to tracker page
+    router.push('/tracker');
   };
 
   return (
